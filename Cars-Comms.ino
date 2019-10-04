@@ -1,11 +1,13 @@
 
+/* *
+ *  This file is the main entrypoint of the code, with the setup function being the first thing called and the loop function being called repeatedly on Core 0
+ */
 
 //Western Engineering RaB1 base code
 //2019 E J Porter
 //WEB Server AP 
 
 // IP adress 192.168.128.1
-
 
 /*
 esp32
@@ -61,9 +63,9 @@ pins         description                        used
 #define LED1pin 2
 #define LED2pin 3 
 
-#include <Math.h>
+//#include <Math.h>
 #include "MyWEBserver.h"
-#include <Servo.h>
+#include <ESP32Servo.h>
 
 
 
@@ -71,7 +73,7 @@ int loopWEBServerButtonresponce(void);
 
 
 char bToggleBit;
-const int ciMainTimer =  200;//200;
+const int ciMainTimer =  200;
 
 unsigned int uiCommunticationTimer;
 
@@ -84,7 +86,7 @@ int bnStateOriginal;
 //*****************************************************
 // Claire's Set up
 int steeringAngle = 70; // 70 is center. range is 40 to 110.
-int carspeed = 90; // 90 is stop. Forwards is 85. Reverse is 95. 
+int driveSpeed = 90; // 90 is stop. Forwards is 85. Reverse is 95. 
 Servo driveServo;
 Servo turnServo;
 unsigned long carlooptimer;
@@ -95,20 +97,21 @@ int curangle;
 void setup() {
   Serial.begin(115200);
   pinMode(INDICATORLED, OUTPUT);
-  
-  driveServo.attach(13);  // attaches the servo on pin 13 to the servo object
-  turnServo.attach(15);  // attaches the servo on pin 13 to the servo object
 
-   setupWEbServer();
+  // FUTURE NOTE: These two functions can define minimum and maximum valid ranges in terms of microSeconds, so we can limit our ranges here.
+  driveServo.attach(13);  // attaches the driving servo on pin 13 to the servo object
+  turnServo.attach(15);  // attaches the turning servo on pin 13 to the servo object
 
-   //initialize variable
-   bnStateOriginal = 0;
-   bnState = 0;
-   curangle = 70;
+  // Start the webserver.
+  setupWebServer();
 
-    //set servos
-  driveServo.write(90);
-  turnServo.write(70);
+  //initialize website based variables as empty
+  bnStateOriginal = 0;
+  bnState = 0;
+
+  //set servos
+  driveServo.write(driveSpeed); 
+  turnServo.write(steeringAngle);
   delay(7000); //upon power up the drive servo needs to be at 90 for a period of time otherwise it enters program mode
 
   carlooptimer = micros();
@@ -117,14 +120,13 @@ void setup() {
 void loop()
 {
 
-   //main timing loop enters if every ~200us (ciMainTimer). this loop time controls all other timers
+  //main timing loop enters if every ~200us (ciMainTimer). this loop time controls all other timers
   ulCurrentMicros = micros();
   if ((ulCurrentMicros - ulPreviousMicros) >= ciMainTimer)
   {
       ulPreviousMicros = ulCurrentMicros;
 
       //increment program timers
-    
       uiCommunticationTimer = uiCommunticationTimer + 1;
       bToggleBit = bToggleBit + 1;
       if(bToggleBit&1)
@@ -143,55 +145,39 @@ void loop()
 
       Serial.print("Bn state in 200us loop ");
       Serial.println(bnState);
-    }//end of code that occurs every 200us
+  } // end of code that occurs every 200us
 
-
-//    carlooptimer = millis();
-//    if ((carlooptimer % 100)>98){
-//      if(flag == false){
-//      Serial.print("Bn state");
-//      Serial.println(bnState);
-//      flag = true;
-//      }
-//      
-//    }
-//    else{flag = false;}
-
-      
-  
-    //YOUR CODE HERE
-    //Buttons: 0 == stop, 1 == forward, 2 == left, 3 == right, 4 == reverse
+//  Buttons: 0 == stop, 1 == forward, 2 == left, 3 == right, 4 == reverse
 //     Serial.println(bnState); //check what is entering the case statement
 //     -possible need to convert to ascii - bnstat may be string
 //     -bnstate is probably being cleared somewhere
     
-    switch(bnState){
-      case 0:
-        Serial.println("Case0");
-        //driveServo.write(90);
-        break;
-      case 1: 
-        Serial.println("Case1");
-        break;
-      case 2: //max 110
-        Serial.println("Case2");
-        if(curangle<100 && ulCurrentMicros%2000<100){
-          curangle += 5;
-        }
-        turnServo.write(curangle);
-        break;
-      case 3: //min 40
-        Serial.println("Case3");
-        if(curangle>50 && ulCurrentMicros%2000<100){
-          curangle -= 5;
-        }
-        turnServo.write(curangle);
-        break;
-      case 4:
+  switch(bnState){
+    case 0:
+      Serial.println("Case0");
+      //driveServo.write(90);
+      break;
+    case 1: 
+      Serial.println("Case1");
+      break;
+    case 2: //max 110
+      Serial.println("Case2");
+      if(curangle<100 && ulCurrentMicros%2000<100){
+        curangle += 5;
+      }
+      turnServo.write(curangle);
+      break;
+    case 3: //min 40
+      Serial.println("Case3");
+      if(curangle>50 && ulCurrentMicros%2000<100){
+      curangle -= 5;
+      }
+      turnServo.write(curangle);
+      break;
+    case 4:
       Serial.println("Case4");
       break;
-    }//end of case
-    Serial.print("Steering Angle: ");
-    Serial.println(curangle);
-
-}// end of loop
+  } //end of case
+  Serial.print("Steering Angle: ");
+  Serial.println(curangle);
+} // end of loop
