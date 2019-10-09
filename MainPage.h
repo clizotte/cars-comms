@@ -1,6 +1,6 @@
 /* *
  * This is the main page that you will get when you visit http://<ip>/
- * This page will contain all of the controls for the car.
+ * This page will contain all of the controls for the car!
  */
 
 const char MAIN_page[] PROGMEM = R"=====(
